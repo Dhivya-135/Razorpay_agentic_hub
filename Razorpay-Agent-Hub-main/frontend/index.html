@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Razorpay Agentic Payment Hub</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- REAL RAZORPAY CHECKOUT SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", sans-serif;
+            background: #ffffff;
+            color: #0f172a;
+            overflow-x: hidden;
+        }
+
+        body.drawer-active {
+            overflow: hidden;
+        }
+
+        .font-mono {
+            font-family: "JetBrains Mono", monospace;
+        }
+
+        .hero-section {
+            position: relative;
+            min-height: 100vh;
+            overflow: hidden;
+            background:
+                radial-gradient(
+                    circle at 75% 45%,
+                    rgba(37, 99, 235, 0.08),
+                    transparent 32%
+                ),
+                linear-gradient(
+                    135deg,
+                    #ffffff 0%,
+                    #f8fafc 50%,
+                    #eff6ff 100%
+                );
+        }
+
+        #ascii-background {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.9;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow:
+                0 20px 60px rgba(15, 23, 42, 0.08);
+        }
+
+        .gradient-text {
+            background: linear-gradient(
+                90deg,
+                #0f172a,
+                #2563eb,
+                #4f46e5
+            );
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .agent-button {
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease,
+                background 0.2s ease;
+        }
+
+        .agent-button:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 12px 30px rgba(37, 99, 235, 0.22);
+        }
+
+        .merchant-card {
+            transition:
+                transform 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .merchant-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(37, 99, 235, 0.4);
+            box-shadow:
+                0 15px 35px rgba(15, 23, 42, 0.08);
+        }
+
+        #agent-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            height: 100vh;
+            width: min(480px, 100vw);
+            z-index: 100;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(
+                0.4,
+                0,
+                0.2,
+                1
+            );
+        }
+
+        #agent-drawer.drawer-open {
+            transform: translateX(0);
+        }
+
+        #agent-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 90;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            visibility: hidden;
+            transition:
+                opacity 0.3s ease,
+                visibility 0.3s ease;
+        }
+
+        #agent-overlay.overlay-visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .drawer-panel {
+            height: 100%;
+            background:
+                radial-gradient(
+                    circle at 50% 0%,
+                    rgba(37, 99, 235, 0.08),
+                    transparent 30%
+                ),
+                #020617;
+            color: #e2e8f0;
+        }
+
+        .drawer-border {
+            border-color: rgba(148, 163, 184, 0.14);
+        }
+
+        .drawer-panel input {
+            color: #e2e8f0;
+        }
+
+        .drawer-panel input::placeholder {
+            color: #64748b;
+        }
+
+        #chat-window {
+            scrollbar-width: thin;
+            scrollbar-color: #334155 transparent;
+        }
+
+        #chat-window::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        #chat-window::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #chat-window::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 999px;
+        }
+
+        .user-message {
+            background: #2563eb;
+            color: white;
+            border-radius: 16px;
+            border-bottom-right-radius: 4px;
+            padding: 11px 14px;
+            box-shadow:
+                0 8px 20px rgba(37, 99, 235, 0.15);
+        }
+
+        .assistant-message {
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.13);
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            padding: 11px 14px;
+        }
+
+        .product-card {
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.13);
+            transition:
+                transform 0.2s ease,
+                border-color 0.2s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(59, 130, 246, 0.45);
+        }
+
+        .message-animate {
+            animation: messageIn 0.25s ease-out;
+        }
+
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+            animation: pulseDot 2s infinite;
+        }
+
+        @keyframes pulseDot {
+            70% {
+                box-shadow:
+                    0 0 0 7px rgba(34, 197, 94, 0);
+            }
+
+            100% {
+                box-shadow:
+                    0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+
+        .floating-card {
+            animation: floating 5s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-section {
+                min-height: 100svh;
+            }
+
+            #agent-drawer {
+                width: 100vw;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ========================================================= -->
+    <!-- HERO SECTION -->
+    <!-- ========================================================= -->
+
+    <section
+        id="hero-section"
+        class="hero-section min-h-screen"
+    >
+
+        <canvas
+            id="ascii-background"
+            aria-hidden="true"
+        ></canvas>
+
+        <!-- NAVBAR -->
+        <nav
+            class="relative z-20 flex items-center justify-between px-6 md:px-12 py-6"
+        >
+
+            <div class="flex items-center gap-3">
+
+                <div
+                    class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20"
+                >
+                    <i
+                        data-lucide="zap"
+                        class="w-5 h-5 text-white"
+                    ></i>
+                </div>
+
+                <div>
+                    <div class="font-black tracking-tight text-slate-900">
+                        Agentic
+                    </div>
+
+                    <div class="font-mono text-[10px] text-slate-500 tracking-widest uppercase">
+                        Payment Hub
+                    </div>
+                </div>
+
+            </div>
+
+            <button
+                id="open-agent-btn"
+                class="agent-button flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-950 text-white font-bold text-sm shadow-lg"
+            >
+                <i
+                    data-lucide="bot"
+                    class="w-4 h-4"
+                ></i>
+
+                Open AI Agent
+            </button>
+
+        </nav>
+
+        <!-- HERO CONTENT -->
+        <div
+            class="hero-content min-h-[calc(100vh-96px)] flex items-center px-6 md:px-12 pb-20"
+        >
+
+            <div
+                class="max-w-7xl w-full mx-auto grid lg:grid-cols-2 gap-12 items-center"
+            >
+
+                <!-- LEFT -->
+                <div>
+
+                    <div
+                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 font-mono text-[11px] font-bold uppercase tracking-wider mb-7"
+                    >
+
+                        <span class="pulse-dot"></span>
+
+                        AI Payment Infrastructure
+
+                    </div>
+
+                    <h1
+                        class="text-5xl md:text-7xl font-black tracking-tight leading-[0.95] text-slate-950"
+                    >
+                        Pay with
+                        <span class="gradient-text">
+                            intent.
+                        </span>
+                    </h1>
+
+                    <p
+                        class="mt-7 max-w-xl text-lg md:text-xl text-slate-600 leading-relaxed"
+                    >
+                        An AI-powered payment agent that understands what you want,
+                        finds the right option, and takes you directly to checkout.
+                    </p>
+
+                    <div
+                        class="mt-9 flex flex-wrap gap-4"
+                    >
+
+                        <button
+                            id="hero-open-agent-btn"
+                            class="agent-button inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-xl shadow-blue-600/20"
+                        >
+
+                            <i
+                                data-lucide="sparkles"
+                                class="w-5 h-5"
+                            ></i>
+
+                            Try the AI Agent
+
+                        </button>
+
+                        <a
+                            href="#merchants"
+                            class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold hover:border-blue-300 transition"
+                        >
+
+                            Explore merchants
+
+                            <i
+                                data-lucide="arrow-down"
+                                class="w-4 h-4"
+                            ></i>
+
+                        </a>
+
+                    </div>
+
+                    <!-- STATS -->
+                    <div
+                        class="mt-12 flex flex-wrap gap-8"
+                    >
+
+                        <div>
+                            <div class="text-2xl font-black text-slate-950">
+                                AI
+                            </div>
+
+                            <div class="font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                                Intent Engine
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="text-2xl font-black text-slate-950">
+                                24/7
+                            </div>
+
+                            <div class="font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                                Agent Access
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="text-2xl font-black text-slate-950">
+                                1-Click
+                            </div>
+
+                            <div class="font-mono text-[10px] uppercase tracking-widest text-slate-500">
+                                Checkout
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- RIGHT VISUAL -->
+                <div class="hidden lg:block relative">
+
+                    <div
+                        class="floating-card glass-card rounded-3xl p-6 max-w-md ml-auto"
+                    >
+
+                        <div
+                            class="flex items-center justify-between mb-6"
+                        >
+
+                            <div class="flex items-center gap-3">
+
+                                <div
+                                    class="w-11 h-11 rounded-xl bg-slate-950 flex items-center justify-center"
+                                >
+                                    <i
+                                        data-lucide="bot"
+                                        class="w-5 h-5 text-white"
+                                    ></i>
+                                </div>
+
+                                <div>
+                                    <div class="font-bold text-slate-900">
+                                        Payment Agent
+                                    </div>
+
+                                    <div class="font-mono text-[10px] text-green-600 uppercase">
+                                        Online
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <span
+                                class="px-2 py-1 rounded-md bg-blue-50 text-blue-600 font-mono text-[9px] font-bold uppercase"
+                            >
+                                AI
+                            </span>
+
+                        </div>
+
+                        <div
+                            class="space-y-3"
+                        >
+
+                            <div
+                                class="bg-slate-100 rounded-2xl rounded-bl-md p-4 text-sm text-slate-600"
+                            >
+                                Find me a good pizza for dinner.
+                            </div>
+
+                            <div
+                                class="bg-slate-950 text-slate-200 rounded-2xl rounded-br-md p-4 text-sm"
+                            >
+                                I'll handle the search and prepare your
+                                payment checkout.
+                            </div>
+
+                            <div
+                                class="grid grid-cols-2 gap-3"
+                            >
+
+                                <div
+                                    class="bg-white border border-slate-200 rounded-xl p-3"
+                                >
+                                    <div class="text-[10px] text-slate-400 font-mono uppercase">
+                                        Merchant
+                                    </div>
+
+                                    <div class="font-bold text-sm mt-1">
+                                        Swiggy
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="bg-white border border-slate-200 rounded-xl p-3"
+                                >
+                                    <div class="text-[10px] text-slate-400 font-mono uppercase">
+                                        Payment
+                                    </div>
+
+                                    <div class="font-bold text-sm mt-1">
+                                        Razorpay
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- MERCHANT SECTION -->
+    <!-- ========================================================= -->
+
+    <section
+        id="merchants"
+        class="py-24 px-6 md:px-12 bg-slate-50"
+    >
+
+        <div class="max-w-7xl mx-auto">
+
+            <div class="max-w-2xl mb-12">
+
+                <div
+                    class="font-mono text-xs text-blue-600 uppercase tracking-[0.2em] font-bold mb-3"
+                >
+                    Supported merchants
+                </div>
+
+                <h2
+                    class="text-4xl md:text-5xl font-black tracking-tight text-slate-950"
+                >
+                    One agent.
+                    <br>
+                    Multiple experiences.
+                </h2>
+
+                <p
+                    class="mt-5 text-slate-600 text-lg"
+                >
+                    Tell the agent what you need. It can route food,
+                    entertainment, and payment actions through the right flow.
+                </p>
+
+            </div>
+
+            <div
+                class="grid md:grid-cols-3 gap-5"
+            >
+
+                <!-- SWIGGY -->
+                <button
+                    class="merchant-card text-left bg-white border border-slate-200 rounded-2xl p-6"
+                    data-merchant="Swiggy"
+                >
+
+                    <div
+                        class="flex items-center justify-between"
+                    >
+
+                        <div
+                            class="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center"
+                        >
+                            <i
+                                data-lucide="utensils"
+                                class="w-6 h-6 text-orange-600"
+                            ></i>
+                        </div>
+
+                        <i
+                            data-lucide="arrow-up-right"
+                            class="w-5 h-5 text-slate-400"
+                        ></i>
+
+                    </div>
+
+                    <h3
+                        class="mt-6 text-xl font-black"
+                    >
+                        Swiggy
+                    </h3>
+
+                    <p
+                        class="mt-2 text-sm text-slate-500"
+                    >
+                        Food discovery and ordering through the AI agent.
+                    </p>
+
+                </button>
+
+                <!-- ZOMATO -->
+                <button
+                    class="merchant-card text-left bg-white border border-slate-200 rounded-2xl p-6"
+                    data-merchant="Zomato"
+                >
+
+                    <div
+                        class="flex items-center justify-between"
+                    >
+
+                        <div
+                            class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center"
+                        >
+                            <i
+                                data-lucide="utensils-crossed"
+                                class="w-6 h-6 text-red-600"
+                            ></i>
+                        </div>
+
+                        <i
+                            data-lucide="arrow-up-right"
+                            class="w-5 h-5 text-slate-400"
+                        ></i>
+
+                    </div>
+
+                    <h3
+                        class="mt-6 text-xl font-black"
+                    >
+                        Zomato
+                    </h3>
+
+                    <p
+                        class="mt-2 text-sm text-slate-500"
+                    >
+                        Discover food and let the agent handle your checkout flow.
+                    </p>
+
+                </button>
+
+                <!-- PVR INOX -->
+                <button
+                    class="merchant-card text-left bg-white border border-slate-200 rounded-2xl p-6"
+                    data-merchant="PVR INOX"
+                >
+
+                    <div
+                        class="flex items-center justify-between"
+                    >
+
+                        <div
+                            class="w-12 h-12 rounded-xl bg-yellow-100 flex items-center justify-center"
+                        >
+                            <i
+                                data-lucide="clapperboard"
+                                class="w-6 h-6 text-yellow-700"
+                            ></i>
+                        </div>
+
+                        <i
+                            data-lucide="arrow-up-right"
+                            class="w-5 h-5 text-slate-400"
+                        ></i>
+
+                    </div>
+
+                    <h3
+                        class="mt-6 text-xl font-black"
+                    >
+                        PVR INOX
+                    </h3>
+
+                    <p
+                        class="mt-2 text-sm text-slate-500"
+                    >
+                        Browse movie options and proceed directly to payment.
+                    </p>
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- HOW IT WORKS -->
+    <!-- ========================================================= -->
+
+    <section
+        class="py-24 px-6 md:px-12 bg-white"
+    >
+
+        <div class="max-w-7xl mx-auto">
+
+            <div
+                class="text-center max-w-2xl mx-auto mb-14"
+            >
+
+                <div
+                    class="font-mono text-xs text-blue-600 uppercase tracking-[0.2em] font-bold mb-3"
+                >
+                    Agent workflow
+                </div>
+
+                <h2
+                    class="text-4xl md:text-5xl font-black tracking-tight"
+                >
+                    From intent to payment.
+                </h2>
+
+            </div>
+
+            <div
+                class="grid md:grid-cols-3 gap-6"
+            >
+
+                <div
+                    class="glass-card rounded-2xl p-7"
+                >
+
+                    <div
+                        class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black"
+                    >
+                        01
+                    </div>
+
+                    <h3
+                        class="mt-6 text-xl font-black"
+                    >
+                        Tell the agent
+                    </h3>
+
+                    <p
+                        class="mt-3 text-slate-500 leading-relaxed"
+                    >
+                        Describe what you want naturally instead of navigating
+                        through multiple screens.
+                    </p>
+
+                </div>
+
+                <div
+                    class="glass-card rounded-2xl p-7"
+                >
+
+                    <div
+                        class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black"
+                    >
+                        02
+                    </div>
+
+                    <h3
+                        class="mt-6 text-xl font-black"
+                    >
+                        Agent executes
+                    </h3>
+
+                    <p
+                        class="mt-3 text-slate-500 leading-relaxed"
+                    >
+                        The agent determines the correct merchant and uses the
+                        appropriate tools and latest options.
+                    </p>
+
+                </div>
+
+                <div
+                    class="glass-card rounded-2xl p-7"
+                >
+
+                    <div
+                        class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black"
+                    >
+                        03
+                    </div>
+
+                    <h3
+                        class="mt-6 text-xl font-black"
+                    >
+                        Razorpay checkout
+                    </h3>
+
+                    <p
+                        class="mt-3 text-slate-500 leading-relaxed"
+                    >
+                        A real Razorpay Checkout window opens using the order
+                        created by your backend.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- FOOTER -->
+    <!-- ========================================================= -->
+
+    <footer
+        class="bg-slate-950 text-slate-400 py-10 px-6 md:px-12"
+    >
+
+        <div
+            class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4"
+        >
+
+            <div
+                class="font-bold text-white"
+            >
+                Agentic Payment Hub
+            </div>
+
+            <div
+                class="font-mono text-[10px] uppercase tracking-widest"
+            >
+                Powered by AI + Razorpay
+            </div>
+
+        </div>
+
+    </footer>
+
+    <!-- ========================================================= -->
+    <!-- AGENT OVERLAY -->
+    <!-- ========================================================= -->
+
+    <div
+        id="agent-overlay"
+    ></div>
+
+    <!-- ========================================================= -->
+    <!-- AGENT DRAWER -->
+    <!-- ========================================================= -->
+
+    <aside
+        id="agent-drawer"
+        class="drawer-panel shadow-2xl"
+    >
+
+        <div
+            class="h-full flex flex-col"
+        >
+
+            <!-- DRAWER HEADER -->
+            <header
+                class="flex-shrink-0 px-5 py-4 border-b drawer-border"
+            >
+
+                <div
+                    class="flex items-center justify-between"
+                >
+
+                    <div
+                        class="flex items-center gap-3"
+                    >
+
+                        <button
+                            id="back-agent-btn"
+                            class="w-9 h-9 rounded-lg bg-slate-900 hover:bg-slate-800 flex items-center justify-center transition"
+                        >
+
+                            <i
+                                data-lucide="arrow-left"
+                                class="w-4 h-4"
+                            ></i>
+
+                        </button>
+
+                        <div
+                            class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center"
+                        >
+
+                            <i
+                                data-lucide="bot"
+                                class="w-5 h-5 text-white"
+                            ></i>
+
+                        </div>
+
+                        <div>
+
+                            <div
+                                class="font-bold text-white"
+                            >
+                                Payment Agent
+                            </div>
+
+                            <div
+                                class="flex items-center gap-1.5 font-mono text-[9px] text-green-400 uppercase tracking-wider"
+                            >
+
+                                <span class="pulse-dot"></span>
+
+                                Agent Online
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <button
+                        id="close-agent-btn"
+                        class="w-9 h-9 rounded-lg hover:bg-slate-900 flex items-center justify-center transition"
+                    >
+
+                        <i
+                            data-lucide="x"
+                            class="w-5 h-5"
+                        ></i>
+
+                    </button>
+
+                </div>
+
+            </header>
+
+            <!-- MERCHANT QUICK ACTIONS -->
+            <div
+                class="flex-shrink-0 px-5 py-4 border-b drawer-border"
+            >
+
+                <div
+                    class="font-mono text-[9px] text-slate-500 uppercase tracking-widest mb-3"
+                >
+                    Quick actions
+                </div>
+
+                <div
+                    class="grid grid-cols-3 gap-2"
+                >
+
+                    <button
+                        class="merchant-card bg-slate-900 border drawer-border rounded-xl p-3 text-center"
+                        data-merchant="Swiggy"
+                    >
+
+                        <i
+                            data-lucide="utensils"
+                            class="w-4 h-4 mx-auto text-orange-400"
+                        ></i>
+
+                        <span
+                            class="block mt-2 text-[10px] font-bold"
+                        >
+                            Swiggy
+                        </span>
+
+                    </button>
+
+                    <button
+                        class="merchant-card bg-slate-900 border drawer-border rounded-xl p-3 text-center"
+                        data-merchant="Zomato"
+                    >
+
+                        <i
+                            data-lucide="utensils-crossed"
+                            class="w-4 h-4 mx-auto text-red-400"
+                        ></i>
+
+                        <span
+                            class="block mt-2 text-[10px] font-bold"
+                        >
+                            Zomato
+                        </span>
+
+                    </button>
+
+                    <button
+                        class="merchant-card bg-slate-900 border drawer-border rounded-xl p-3 text-center"
+                        data-merchant="PVR INOX"
+                    >
+
+                        <i
+                            data-lucide="clapperboard"
+                            class="w-4 h-4 mx-auto text-yellow-400"
+                        ></i>
+
+                        <span
+                            class="block mt-2 text-[10px] font-bold"
+                        >
+                            PVR INOX
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+            <!-- PRODUCT RESULTS -->
+            <div
+                class="flex-shrink-0 px-5 pt-4"
+            >
+
+                <div
+                    class="flex items-center justify-between mb-3"
+                >
+
+                    <span
+                        class="font-mono text-[9px] text-slate-500 uppercase tracking-widest"
+                    >
+                        Latest options
+                    </span>
+
+                    <span
+                        class="text-[9px] text-slate-600"
+                    >
+                        Agent results
+                    </span>
+
+                </div>
+
+                <div
+                    id="product-grid"
+                    class="grid grid-cols-1 gap-3 max-h-56 overflow-y-auto pr-1"
+                ></div>
+
+            </div>
+
+            <!-- CHAT -->
+            <div
+                id="chat-window"
+                class="flex-1 overflow-y-auto px-5 py-5 space-y-4 min-h-0"
+            >
+
+                <div
+                    class="flex flex-col space-y-1 max-w-[85%] items-start message-animate"
+                >
+
+                    <div
+                        class="assistant-message"
+                    >
+
+                        <p
+                            class="leading-relaxed text-sm"
+                        >
+                            Hi! I'm your payment agent. Tell me what you want to
+                            order or watch, and I'll handle the next step.
+                        </p>
+
+                    </div>
+
+                    <span
+                        class="text-[10px] text-slate-500 font-mono uppercase px-1"
+                    >
+                        SYSTEM AGENT • ACTIVE
+                    </span>
+
+                </div>
+
+            </div>
+
+            <!-- CHAT INPUT -->
+            <div
+                class="flex-shrink-0 p-5 border-t drawer-border"
+            >
+
+                <form
+                    id="chat-form"
+                    class="relative"
+                >
+
+                    <input
+                        id="chat-input"
+                        type="text"
+                        autocomplete="off"
+                        placeholder="Ask for food, movies, or checkout..."
+                        class="w-full bg-slate-900 border border-slate-800 focus:border-blue-500 outline-none rounded-2xl pl-4 pr-14 py-4 text-sm transition"
+                    >
+
+                    <button
+                        id="send-btn"
+                        type="submit"
+                        class="absolute right-2 top-2 w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition"
+                    >
+
+                        <i
+                            data-lucide="send"
+                            class="w-4 h-4 text-white"
+                        ></i>
+
+                    </button>
+
+                </form>
+
+                <div
+                    class="mt-3 flex items-center justify-center gap-2 text-[9px] text-slate-600 font-mono"
+                >
+
+                    <i
+                        data-lucide="shield-check"
+                        class="w-3 h-3"
+                    ></i>
+
+                    SECURE RAZORPAY CHECKOUT
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+    <!-- ========================================================= -->
+    <!-- FRONTEND APPLICATION -->
+    <!-- ========================================================= -->
+
+    <script src="/frontend/app.js?v=10"></script>
+
+    <script>
+        document.addEventListener(
+            "DOMContentLoaded",
+            () => {
+                if (
+                    typeof lucide !== "undefined" &&
+                    lucide.createIcons
+                ) {
+                    lucide.createIcons();
+                }
+            }
+        );
+    </script>
+
+</body>
+</html>

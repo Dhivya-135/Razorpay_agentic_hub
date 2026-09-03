@@ -1,0 +1,2628 @@
+/* =========================================================
+   RAZORPAY LIGHT + AGENT DARK THEME
+========================================================= */
+
+:root {
+
+    --font-sans:
+        'Mulish',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+
+    --razorpay-blue: #2563eb;
+    --razorpay-light-blue: #60a5fa;
+    --razorpay-pale-blue: #dbeafe;
+
+    /* Agent colors */
+
+    --drawer-bg: #0f172a;
+    --drawer-panel: #1e293b;
+    --drawer-sidebar: #111827;
+
+    --drawer-border: #29364a;
+
+    --drawer-text: #e2e8f0;
+    --drawer-muted: #94a3b8;
+
+    --indigo: #4f46e5;
+    --indigo-hover: #6366f1;
+
+    --emerald: #10b981;
+}
+
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+*,
+*::before,
+*::after {
+
+    box-sizing: border-box;
+
+}
+
+
+html,
+body {
+
+    margin: 0;
+    padding: 0;
+
+    width: 100%;
+    min-height: 100%;
+
+}
+
+
+html {
+
+    scroll-behavior: smooth;
+
+}
+
+
+body {
+
+    font-family: var(--font-sans);
+
+    background: #ffffff;
+
+    color: #0f172a;
+
+    overflow-x: hidden;
+
+}
+
+
+body.drawer-active {
+
+    overflow: hidden;
+
+}
+
+
+/* =========================================================
+   TOP BAR
+========================================================= */
+
+.top-bar {
+
+    position: relative;
+
+    z-index: 30;
+
+    background: #f1f5f9;
+
+    border-bottom:
+        1px solid #e2e8f0;
+
+    color: #475569;
+
+    font-size: 12px;
+
+    padding:
+        8px 16px;
+
+}
+
+
+.top-bar-inner {
+
+    max-width: 1280px;
+
+    width: 100%;
+
+    margin: 0 auto;
+
+}
+
+
+.top-bar-left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    min-height: 22px;
+
+}
+
+
+.top-title {
+
+    color: #0f172a;
+
+    font-weight: 800;
+
+}
+
+
+.country-pill {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    background: #ffffff;
+
+    border:
+        1px solid #cbd5e1;
+
+    border-radius: 999px;
+
+    padding:
+        2px 8px 2px 4px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+}
+
+
+.country-circle {
+
+    width: 18px;
+
+    height: 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #2563eb;
+
+    color: white;
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+}
+
+
+.top-description {
+
+    color: #64748b;
+
+}
+
+
+.know-more-btn {
+
+    border: none;
+
+    background: #0f172a;
+
+    color: white;
+
+    border-radius: 5px;
+
+    padding:
+        5px 10px;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease;
+
+}
+
+
+.know-more-btn:hover {
+
+    background: #1e293b;
+
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.main-header {
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 40;
+
+    height: 75px;
+
+    background:
+        rgba(255,255,255,0.96);
+
+    backdrop-filter:
+        blur(14px);
+
+    border-bottom:
+        1px solid #f1f5f9;
+
+}
+
+
+.header-inner {
+
+    max-width: 1280px;
+
+    height: 100%;
+
+    margin: 0 auto;
+
+    padding:
+        0 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+}
+
+
+.logo-area {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 45px;
+
+}
+
+
+.razorpay-logo {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    color: #111827;
+
+    text-decoration: none;
+
+}
+
+
+.razorpay-logo span {
+
+    font-size: 28px;
+
+    font-weight: 900;
+
+    font-style: italic;
+
+    letter-spacing: -1.8px;
+
+}
+
+
+.razorpay-mark {
+
+    width: 40px;
+
+    height: 32px;
+
+}
+
+
+.desktop-nav {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 28px;
+
+}
+
+
+.desktop-nav a {
+
+    position: relative;
+
+    height: 75px;
+
+    display: flex;
+
+    align-items: center;
+
+    color: #64748b;
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    transition:
+        color 0.2s ease;
+
+}
+
+
+.desktop-nav a:hover {
+
+    color: #2563eb;
+
+}
+
+
+.desktop-nav .active-nav {
+
+    color: #2563eb;
+
+}
+
+
+.desktop-nav .active-nav::after {
+
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+
+    right: 0;
+
+    bottom: 0;
+
+    height: 2px;
+
+    background: #2563eb;
+
+}
+
+
+.open-agent-top-btn {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    padding:
+        13px 23px;
+
+    background: #2563eb;
+
+    color: white;
+
+    border: none;
+
+    border-radius: 9px;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 10px 25px
+        rgba(37,99,235,0.18);
+
+    transition:
+        all 0.2s ease;
+
+}
+
+
+.open-agent-top-btn:hover {
+
+    background: #1d4ed8;
+
+    transform:
+        translateY(-1px);
+
+}
+
+
+.icon-16 {
+
+    width: 16px;
+    height: 16px;
+
+}
+
+
+.icon-18 {
+
+    width: 18px;
+    height: 18px;
+
+}
+
+
+.icon-20 {
+
+    width: 20px;
+    height: 20px;
+
+}
+
+
+/* =========================================================
+   HERO
+========================================================= */
+
+#hero-section {
+
+    position: relative;
+
+    isolation: isolate;
+
+    min-height:
+        calc(100vh - 115px);
+
+    overflow: hidden;
+
+    background:
+
+        radial-gradient(
+            circle at 75% 50%,
+            rgba(219,234,254,0.35),
+            rgba(255,255,255,0)
+            42%
+        ),
+
+        #ffffff;
+
+}
+
+
+.hero-section {
+
+    position: relative;
+
+}
+
+
+#ascii-background {
+
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    z-index: -2;
+
+    pointer-events: none;
+
+    display: block;
+
+}
+
+
+.ascii-fade {
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: -1;
+
+    pointer-events: none;
+
+    background:
+
+        linear-gradient(
+            90deg,
+            rgba(255,255,255,0.99) 0%,
+            rgba(255,255,255,0.94) 28%,
+            rgba(255,255,255,0.48) 58%,
+            rgba(255,255,255,0.04) 100%
+        );
+
+}
+
+
+.ascii-glow {
+
+    position: absolute;
+
+    width: 620px;
+    height: 620px;
+
+    right: 2%;
+
+    top: 50%;
+
+    transform:
+        translateY(-50%);
+
+    border-radius: 50%;
+
+    background:
+
+        radial-gradient(
+            circle,
+            rgba(96,165,250,0.13) 0%,
+            rgba(147,197,253,0.07) 35%,
+            rgba(255,255,255,0) 72%
+        );
+
+    filter:
+        blur(20px);
+
+    pointer-events: none;
+
+    z-index: -1;
+
+}
+
+
+.hero-container {
+
+    position: relative;
+
+    z-index: 5;
+
+    max-width: 1280px;
+
+    min-height:
+        calc(100vh - 115px);
+
+    margin: 0 auto;
+
+    padding:
+        0 20px;
+
+    display: flex;
+
+    align-items: center;
+
+}
+
+
+.hero-content {
+
+    width: 62%;
+
+    padding:
+        70px 0;
+
+}
+
+
+.hero-badge {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding:
+        8px 14px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(239,246,255,0.9);
+
+    border:
+        1px solid #bfdbfe;
+
+    color: #2563eb;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    box-shadow:
+        0 4px 15px
+        rgba(37,99,235,0.08);
+
+    backdrop-filter:
+        blur(8px);
+
+}
+
+
+.pulse-dot {
+
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: #3b82f6;
+
+    animation:
+        pulse 1.5s infinite;
+
+}
+
+
+@keyframes pulse {
+
+    0%,
+    100% {
+
+        opacity: 1;
+
+        transform:
+            scale(1);
+
+    }
+
+    50% {
+
+        opacity: 0.45;
+
+        transform:
+            scale(0.75);
+
+    }
+
+}
+
+
+.hero-title {
+
+    margin:
+        28px 0 0;
+
+    font-size:
+        clamp(3.5rem, 6vw, 6.8rem);
+
+    line-height:
+        0.95;
+
+    letter-spacing:
+        -0.055em;
+
+    font-weight: 900;
+
+    color: #0f172a;
+
+}
+
+
+.hero-title-gradient {
+
+    background:
+
+        linear-gradient(
+            90deg,
+            #2563eb,
+            #3b82f6,
+            #60a5fa
+        );
+
+    -webkit-background-clip: text;
+
+    background-clip: text;
+
+    color: transparent;
+
+}
+
+
+.hero-description {
+
+    max-width: 620px;
+
+    margin-top: 28px;
+
+    font-size: 18px;
+
+    line-height: 1.7;
+
+    color: #64748b;
+
+    font-weight: 500;
+
+}
+
+
+.hero-actions {
+
+    margin-top: 35px;
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    align-items: center;
+
+    gap: 14px;
+
+}
+
+
+.hero-button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    padding:
+        15px 25px;
+
+    background: #2563eb;
+
+    color: white;
+
+    border: none;
+
+    border-radius: 8px;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 10px 25px
+        rgba(37,99,235,0.2);
+
+    transition:
+        all 0.2s ease;
+
+}
+
+
+.hero-button:hover {
+
+    background: #1d4ed8;
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 15px 30px
+        rgba(37,99,235,0.25);
+
+}
+
+
+.secondary-button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding:
+        15px 22px;
+
+    background: white;
+
+    color: #475569;
+
+    border:
+        1px solid #e2e8f0;
+
+    border-radius: 8px;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        all 0.2s ease;
+
+}
+
+
+.secondary-button:hover {
+
+    background: #f8fafc;
+
+    border-color: #cbd5e1;
+
+}
+
+
+.blue-icon {
+
+    color: #3b82f6;
+
+}
+
+
+.trust-items {
+
+    margin-top: 38px;
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap:
+        25px;
+
+}
+
+
+.trust-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    color: #94a3b8;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+}
+
+
+.trust-item svg {
+
+    width: 17px;
+    height: 17px;
+
+    color: #3b82f6;
+
+}
+
+
+/* =========================================================
+   DRAWER OVERLAY
+========================================================= */
+
+.agent-overlay {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 90;
+
+    background:
+        rgba(2,6,23,0.55);
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.3s ease,
+        visibility 0.3s ease;
+
+    backdrop-filter:
+        blur(2px);
+
+}
+
+
+.agent-overlay.overlay-visible {
+
+    opacity: 1;
+
+    visibility: visible;
+
+    pointer-events: auto;
+
+}
+
+
+/* =========================================================
+   AGENT DRAWER
+========================================================= */
+
+#agent-drawer {
+
+    position: fixed;
+
+    top: 0;
+
+    right: 0;
+
+    bottom: 0;
+
+    width: 75vw;
+
+    max-width: 1500px;
+
+    min-width: 760px;
+
+    z-index: 100;
+
+    background:
+        var(--drawer-bg);
+
+    color:
+        var(--drawer-text);
+
+    border-left:
+        1px solid var(--drawer-border);
+
+    box-shadow:
+        -25px 0 70px
+        rgba(0,0,0,0.28);
+
+    transform:
+        translateX(100%);
+
+    transition:
+        transform 0.35s
+        cubic-bezier(0.4,0,0.2,1);
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow: hidden;
+
+}
+
+
+#agent-drawer.drawer-open {
+
+    transform:
+        translateX(0);
+
+}
+
+
+/* =========================================================
+   DRAWER HEADER
+========================================================= */
+
+.drawer-header {
+
+    height: 74px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding:
+        0 20px;
+
+    background:
+        #0f172a;
+
+    border-bottom:
+        1px solid var(--drawer-border);
+
+}
+
+
+.drawer-header-left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    min-width: 0;
+
+}
+
+
+.drawer-back-btn,
+.drawer-close-btn {
+
+    width: 40px;
+
+    height: 40px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background:
+        #1e293b;
+
+    color:
+        #94a3b8;
+
+    border:
+        1px solid #334155;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    transition:
+        all 0.2s ease;
+
+}
+
+
+.drawer-back-btn:hover,
+.drawer-close-btn:hover {
+
+    color: white;
+
+    background:
+        #273449;
+
+    border-color:
+        #475569;
+
+}
+
+
+.drawer-back-btn svg,
+.drawer-close-btn svg {
+
+    width: 19px;
+    height: 19px;
+
+    stroke-width: 2;
+
+}
+
+
+.agent-logo {
+
+    width: 40px;
+
+    height: 40px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background:
+        rgba(99,102,241,0.12);
+
+    border:
+        1px solid
+        rgba(99,102,241,0.28);
+
+    color:
+        #818cf8;
+
+}
+
+
+.agent-logo svg {
+
+    width: 20px;
+    height: 20px;
+
+}
+
+
+.agent-heading {
+
+    min-width: 0;
+
+}
+
+
+.agent-heading h1 {
+
+    margin: 0;
+
+    font-size: 15px;
+
+    line-height: 1.2;
+
+    font-weight: 900;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    background:
+        linear-gradient(
+            90deg,
+            #34d399,
+            #22d3ee
+        );
+
+    -webkit-background-clip: text;
+
+    background-clip: text;
+
+    color: transparent;
+
+}
+
+
+.agent-heading p {
+
+    margin:
+        4px 0 0;
+
+    color:
+        #64748b;
+
+    font-size: 9px;
+
+    letter-spacing:
+        0.14em;
+
+    font-family:
+        monospace;
+
+    font-weight: 700;
+
+}
+
+
+/* =========================================================
+   DRAWER MAIN
+========================================================= */
+
+.drawer-main {
+
+    flex: 1;
+
+    min-height: 0;
+
+    display: flex;
+
+    overflow: hidden;
+
+}
+
+
+/* =========================================================
+   CHAT
+========================================================= */
+
+.chat-section {
+
+    width: 70%;
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    position: relative;
+
+    background:
+        #0f172a;
+
+    border-right:
+        1px solid var(--drawer-border);
+
+}
+
+
+.chat-window {
+
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding:
+        22px;
+
+}
+
+
+.chat-window::-webkit-scrollbar,
+.product-grid::-webkit-scrollbar {
+
+    width: 5px;
+
+}
+
+
+.chat-window::-webkit-scrollbar-track,
+.product-grid::-webkit-scrollbar-track {
+
+    background: transparent;
+
+}
+
+
+.chat-window::-webkit-scrollbar-thumb,
+.product-grid::-webkit-scrollbar-thumb {
+
+    background:
+        #334155;
+
+    border-radius: 999px;
+
+}
+
+
+/* =========================================================
+   ASSISTANT MESSAGE
+========================================================= */
+
+.assistant-message-wrapper {
+
+    max-width: 85%;
+
+}
+
+
+.assistant-message {
+
+    padding:
+        27px 25px;
+
+    background:
+        #1e293b;
+
+    border:
+        1px solid #334155;
+
+    border-radius:
+        0 20px 20px 20px;
+
+    box-shadow:
+        0 10px 25px
+        rgba(0,0,0,0.12);
+
+}
+
+
+.assistant-message p {
+
+    margin: 0;
+
+    color:
+        #e2e8f0;
+
+    font-size:
+        16px;
+
+    line-height:
+        1.55;
+
+    font-weight:
+        700;
+
+}
+
+
+.system-status {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top:
+        13px;
+
+    margin-left:
+        5px;
+
+    color:
+        #94a3b8;
+
+    font-size:
+        10px;
+
+    font-family:
+        monospace;
+
+    letter-spacing:
+        0.08em;
+
+    font-weight:
+        700;
+
+}
+
+
+.status-dot {
+
+    width: 9px;
+
+    height: 9px;
+
+    border-radius: 50%;
+
+    background:
+        #10b981;
+
+    box-shadow:
+        0 0 8px
+        rgba(16,185,129,0.5);
+
+    animation:
+        statusPulse 1.5s infinite;
+
+}
+
+
+@keyframes statusPulse {
+
+    0%,
+    100% {
+
+        opacity: 1;
+
+    }
+
+    50% {
+
+        opacity: 0.45;
+
+    }
+
+}
+
+
+/* =========================================================
+   CHAT INPUT
+========================================================= */
+
+.chat-input-area {
+
+    flex-shrink: 0;
+
+    padding:
+        20px;
+
+    background:
+        #0f172a;
+
+    border-top:
+        1px solid var(--drawer-border);
+
+}
+
+
+.chat-form {
+
+    width: 100%;
+
+    min-height: 72px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding:
+        9px;
+
+    background:
+        #1e293b;
+
+    border:
+        1px solid #334155;
+
+    border-radius:
+        20px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+
+}
+
+
+.chat-form:focus-within {
+
+    border-color:
+        #6366f1;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(99,102,241,0.08);
+
+}
+
+
+.chat-form input {
+
+    flex: 1;
+
+    min-width: 0;
+
+    height: 52px;
+
+    padding:
+        0 18px;
+
+    border: none;
+
+    outline: none;
+
+    background:
+        transparent;
+
+    color:
+        #e2e8f0;
+
+    font-family:
+        var(--font-sans);
+
+    font-size:
+        16px;
+
+    font-weight:
+        600;
+
+}
+
+
+.chat-form input::placeholder {
+
+    color:
+        #64748b;
+
+}
+
+
+.send-btn {
+
+    height: 46px;
+
+    flex-shrink: 0;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 9px;
+
+    padding:
+        0 23px;
+
+    border: none;
+
+    border-radius:
+        14px;
+
+    background:
+        #4f46e5;
+
+    color: white;
+
+    font-family:
+        var(--font-sans);
+
+    font-size:
+        13px;
+
+    font-weight:
+        900;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 7px 18px
+        rgba(79,70,229,0.22);
+
+    transition:
+        all 0.2s ease;
+
+}
+
+
+.send-btn:hover {
+
+    background:
+        #6366f1;
+
+    transform:
+        translateY(-1px);
+
+}
+
+
+.send-btn svg {
+
+    width: 17px;
+    height: 17px;
+
+}
+
+
+/* =========================================================
+   DISCOVERY SIDEBAR
+========================================================= */
+
+.discovery-section {
+
+    width: 30%;
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background:
+        #111827;
+
+}
+
+
+.discovery-header {
+
+    height: 57px;
+
+    flex-shrink: 0;
+
+    padding:
+        0 15px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    background:
+        #0f172a;
+
+    border-bottom:
+        1px solid var(--drawer-border);
+
+}
+
+
+.discovery-header h2 {
+
+    margin: 0;
+
+    color:
+        #94a3b8;
+
+    font-size:
+        10px;
+
+    letter-spacing:
+        0.14em;
+
+    font-weight:
+        900;
+
+}
+
+
+.agent-view {
+
+    padding:
+        4px 7px;
+
+    color:
+        #818cf8;
+
+    background:
+        rgba(99,102,241,0.08);
+
+    border:
+        1px solid
+        rgba(99,102,241,0.18);
+
+    border-radius:
+        5px;
+
+    font-size:
+        8px;
+
+    font-family:
+        monospace;
+
+    font-weight:
+        800;
+
+}
+
+
+/* =========================================================
+   MERCHANT SECTION
+========================================================= */
+
+.merchant-section {
+
+    padding:
+        15px;
+
+    border-bottom:
+        1px solid var(--drawer-border);
+
+}
+
+
+.merchant-section-title {
+
+    margin-bottom:
+        10px;
+
+    color:
+        #64748b;
+
+    font-size:
+        9px;
+
+    font-family:
+        monospace;
+
+    letter-spacing:
+        0.12em;
+
+    font-weight:
+        800;
+
+}
+
+
+/* =========================================================
+   MERCHANT CARD
+========================================================= */
+
+.merchant-card {
+
+    width: 100%;
+
+    min-height: 58px;
+
+    margin-bottom:
+        8px;
+
+    padding:
+        9px 10px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    text-align: left;
+
+    border:
+        1px solid #29364a;
+
+    border-radius:
+        11px;
+
+    background:
+        rgba(30,41,59,0.65);
+
+    color: white;
+
+    cursor: pointer;
+
+    transition:
+        all 0.2s ease;
+
+}
+
+
+.merchant-card:last-child {
+
+    margin-bottom: 0;
+
+}
+
+
+.merchant-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    border-color:
+        #4f46e5;
+
+    background:
+        rgba(30,41,59,0.95);
+
+    box-shadow:
+        0 10px 22px
+        rgba(0,0,0,0.18);
+
+}
+
+
+.merchant-icon {
+
+    width: 38px;
+
+    height: 38px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius:
+        10px;
+
+    font-weight:
+        900;
+
+    font-size:
+        16px;
+
+    color:
+        white;
+
+    box-shadow:
+        0 4px 12px
+        rgba(0,0,0,0.2);
+
+}
+
+
+/* =========================================================
+   SWIGGY ICON
+========================================================= */
+
+.swiggy-icon {
+
+    background:
+        linear-gradient(
+            135deg,
+            #fc8019,
+            #ff9f43
+        );
+
+    font-style:
+        italic;
+
+}
+
+
+/* =========================================================
+   ZOMATO ICON
+========================================================= */
+
+.zomato-icon {
+
+    background:
+        linear-gradient(
+            135deg,
+            #e23744,
+            #ff4d5a
+        );
+
+    font-family:
+        Georgia,
+        serif;
+
+}
+
+
+/* =========================================================
+   PVR INOX ICON
+========================================================= */
+
+.pvr-icon {
+
+    background:
+        linear-gradient(
+            135deg,
+            #111827,
+            #374151
+        );
+
+    border:
+        1px solid #475569;
+
+    font-size:
+        10px;
+
+    letter-spacing:
+        -0.05em;
+
+}
+
+
+.merchant-info {
+
+    min-width: 0;
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+}
+
+
+.merchant-info strong {
+
+    color:
+        #e2e8f0;
+
+    font-size:
+        12px;
+
+    font-weight:
+        800;
+
+}
+
+
+.merchant-info span {
+
+    color:
+        #64748b;
+
+    font-size:
+        9px;
+
+    font-weight:
+        600;
+
+}
+
+
+.merchant-arrow {
+
+    width: 15px;
+
+    height: 15px;
+
+    flex-shrink: 0;
+
+    color:
+        #64748b;
+
+}
+
+
+/* =========================================================
+   PRODUCT GRID
+========================================================= */
+
+.product-grid {
+
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding:
+        15px;
+
+    display: grid;
+
+    grid-template-columns:
+        1fr;
+
+    align-content: start;
+
+    gap:
+        10px;
+
+}
+
+
+/* =========================================================
+   EMPTY DISCOVERY
+========================================================= */
+
+.empty-discovery {
+
+    min-height:
+        190px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-direction: column;
+
+    text-align: center;
+
+    opacity:
+        0.65;
+
+    padding:
+        30px 15px;
+
+}
+
+
+.empty-icon {
+
+    width: 46px;
+
+    height: 46px;
+
+    margin-bottom:
+        12px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius:
+        13px;
+
+    background:
+        #1e293b;
+
+    border:
+        1px solid #334155;
+
+    color:
+        #64748b;
+
+}
+
+
+.empty-icon svg {
+
+    width: 20px;
+    height: 20px;
+
+}
+
+
+.empty-discovery p {
+
+    margin:
+        0 0 5px;
+
+    color:
+        #94a3b8;
+
+    font-size:
+        11px;
+
+    font-weight:
+        700;
+
+}
+
+
+.empty-discovery span {
+
+    color:
+        #475569;
+
+    font-size:
+        9px;
+
+    line-height:
+        1.5;
+
+}
+
+
+/* =========================================================
+   DYNAMIC PRODUCT CARDS
+========================================================= */
+
+#product-grid .product-card {
+
+    padding:
+        12px;
+
+    border:
+        1px solid #29364a;
+
+    border-radius:
+        12px;
+
+    background:
+        rgba(30,41,59,0.65);
+
+    color:
+        #e2e8f0;
+
+    backdrop-filter:
+        blur(8px);
+
+    transition:
+        all 0.25s ease;
+
+}
+
+
+#product-grid .product-card:hover {
+
+    transform:
+        translateY(-3px);
+
+    border-color:
+        #6366f1;
+
+    background:
+        rgba(30,41,59,0.95);
+
+    box-shadow:
+        0 15px 30px
+        rgba(0,0,0,0.25);
+
+}
+
+
+/* =========================================================
+   EXISTING CHAT MESSAGE COMPATIBILITY
+========================================================= */
+
+.message-bubble {
+
+    max-width: 85%;
+
+    padding:
+        0.75rem 1rem;
+
+    margin-bottom:
+        1rem;
+
+    word-wrap:
+        break-word;
+
+    font-size:
+        0.9375rem;
+
+    line-height:
+        1.5;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+}
+
+
+.user-message {
+
+    align-self:
+        flex-end;
+
+    background-color:
+        #4f46e5;
+
+    color:
+        #ffffff;
+
+    border-radius:
+        1rem 1rem 0 1rem;
+
+    margin-left:
+        auto;
+
+    box-shadow:
+        0 4px 12px
+        rgba(79,70,229,0.2);
+
+}
+
+
+.assistant-message {
+
+    align-self:
+        flex-start;
+
+    background-color:
+        #1e293b;
+
+    color:
+        #f1f5f9;
+
+    border:
+        1px solid #334155;
+
+    border-radius:
+        1rem 1rem 1rem 0;
+
+    margin-right:
+        auto;
+
+    box-shadow:
+        0 4px 12px
+        rgba(0,0,0,0.1);
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 1024px) {
+
+    .desktop-nav {
+
+        display: none;
+
+    }
+
+
+    .logo-area {
+
+        gap: 0;
+
+    }
+
+
+    #agent-drawer {
+
+        width: 100vw;
+
+        min-width: 0;
+
+    }
+
+}
+
+
+@media (max-width: 768px) {
+
+    .top-description,
+    .country-pill {
+
+        display: none;
+
+    }
+
+
+    .top-bar {
+
+        padding:
+            7px 12px;
+
+    }
+
+
+    .top-bar-left {
+
+        justify-content:
+            center;
+
+    }
+
+
+    .main-header {
+
+        height: 68px;
+
+    }
+
+
+    .header-inner {
+
+        padding:
+            0 12px;
+
+    }
+
+
+    .razorpay-logo span {
+
+        font-size:
+            23px;
+
+    }
+
+
+    .razorpay-mark {
+
+        width:
+            32px;
+
+        height:
+            28px;
+
+    }
+
+
+    .open-agent-top-btn {
+
+        padding:
+            10px 13px;
+
+        font-size:
+            12px;
+
+    }
+
+
+    .open-agent-top-btn svg {
+
+        display: none;
+
+    }
+
+
+    #hero-section {
+
+        min-height:
+            650px;
+
+    }
+
+
+    .hero-container {
+
+        min-height:
+            650px;
+
+        padding:
+            0 20px;
+
+    }
+
+
+    .hero-content {
+
+        width:
+            100%;
+
+        padding:
+            55px 0;
+
+    }
+
+
+    .hero-title {
+
+        font-size:
+            3.3rem;
+
+    }
+
+
+    .hero-description {
+
+        font-size:
+            16px;
+
+    }
+
+
+    .ascii-glow {
+
+        width:
+            400px;
+
+        height:
+            400px;
+
+        right:
+            -120px;
+
+    }
+
+
+    .drawer-header {
+
+        height:
+            68px;
+
+        padding:
+            0 12px;
+
+    }
+
+
+    .drawer-header-left {
+
+        gap:
+            8px;
+
+    }
+
+
+    .agent-logo {
+
+        display:
+            none;
+
+    }
+
+
+    .agent-heading h1 {
+
+        font-size:
+            12px;
+
+    }
+
+
+    .agent-heading p {
+
+        font-size:
+            7px;
+
+    }
+
+
+    .drawer-main {
+
+        flex-direction:
+            column;
+
+    }
+
+
+    .chat-section {
+
+        width:
+            100%;
+
+        height:
+            62%;
+
+        min-height:
+            400px;
+
+        border-right:
+            none;
+
+        border-bottom:
+            1px solid var(--drawer-border);
+
+    }
+
+
+    .discovery-section {
+
+        width:
+            100%;
+
+        height:
+            38%;
+
+    }
+
+
+    .merchant-section {
+
+        padding:
+            10px;
+
+    }
+
+
+    .merchant-section-title {
+
+        margin-bottom:
+            7px;
+
+    }
+
+
+    .merchant-card {
+
+        min-height:
+            48px;
+
+        margin-bottom:
+            6px;
+
+    }
+
+
+    .merchant-icon {
+
+        width:
+            32px;
+
+        height:
+            32px;
+
+    }
+
+
+    .merchant-info strong {
+
+        font-size:
+            11px;
+
+    }
+
+
+    .merchant-info span {
+
+        font-size:
+            8px;
+
+    }
+
+
+    .product-grid {
+
+        display:
+            none;
+
+    }
+
+
+    .chat-window {
+
+        padding:
+            15px;
+
+    }
+
+
+    .assistant-message-wrapper {
+
+        max-width:
+            95%;
+
+    }
+
+
+    .assistant-message {
+
+        padding:
+            18px;
+
+    }
+
+
+    .assistant-message p {
+
+        font-size:
+            14px;
+
+    }
+
+
+    .chat-input-area {
+
+        padding:
+            10px;
+
+    }
+
+
+    .chat-form {
+
+        min-height:
+            62px;
+
+    }
+
+
+    .chat-form input {
+
+        font-size:
+            13px;
+
+        padding:
+            0 10px;
+
+    }
+
+
+    .send-btn {
+
+        padding:
+            0 15px;
+
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+    .hero-title {
+
+        font-size:
+            2.8rem;
+
+    }
+
+
+    .hero-actions {
+
+        flex-direction:
+            column;
+
+        align-items:
+            stretch;
+
+    }
+
+
+    .hero-button,
+    .secondary-button {
+
+        justify-content:
+            center;
+
+        width:
+            100%;
+
+    }
+
+
+    .trust-items {
+
+        gap:
+            12px;
+
+    }
+
+
+    .trust-item {
+
+        font-size:
+            11px;
+
+    }
+
+
+    .drawer-back-btn,
+    .drawer-close-btn {
+
+        width:
+            36px;
+
+        height:
+            36px;
+
+    }
+
+}

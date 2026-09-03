@@ -1,0 +1,16 @@
+{
+  "scripts": {
+    "css": "npx @tailwindcss/cli -i ./frontend/style.css -o ./frontend/dist.css --watch",
+    "backend": "python -m uvicorn main:app --app-dir backend --reload --host 0.0.0.0 --port 8000",
+    "frontend": "npx serve frontend -l 3000",
+    "dev": "concurrently \"npm run css\" \"npm run backend\" \"npm run frontend\""
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "autoprefixer": "^10.5.4",
+    "concurrently": "^10.0.5",
+    "postcss": "^8.5.26",
+    "serve": "^14.2.4",
+    "tailwindcss": "^4.3.3"
+  }
+}
