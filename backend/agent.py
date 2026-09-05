@@ -5,96 +5,109 @@ import re
 from dotenv import load_dotenv
 from sarvamai import SarvamAI
 from backend import tools
-from backend.tools import search_merchant_products, create_razorpay_checkout, verify_and_fulfill_payment
 
 load_dotenv()
 
-conversation_state={
-    "pending_options":[],
-    "selected_item":None,
-    "active_merchant":None,
-    "active_type":None
-}
-
 SARVAM_API_KEY=os.getenv("SARVAM_API_KEY")
+
 if not SARVAM_API_KEY:
-    raise RuntimeError("SARVAM_API_KEY is missing from .env")
+    raise RuntimeError("SARVAM_API_KEY is missing. Set it in your .env file.")
 
 client=SarvamAI(api_subscription_key=SARVAM_API_KEY)
 MODEL_ID="sarvam-105b"
 
-SYSTEM_INSTRUCTION="""
-Use “suggest” or “recommend” requests for discovery only; never trigger checkout or payment.
-For food orders, use the food checkout tool directly without database availability checks; never claim food is unavailable.
-Route movies/cinema to PVR INOX and use the database only for movie listings and ticket options.
-When the user selects a numbered option, immediately checkout that exact option; use its real item ID for movies and the selected food name for food.
-Always preserve the latest merchant and option list and never mix previous food, movie, or merchant results.
-Use tools only when required; never invent IDs, prices, restaurants, movies, availability, or payment details.
-""".strip()
+conversation_state={
+    "pending_options":[],
+    "selected_item":None,
+    "active_type":None,
+    "active_merchant":None
+}
 
-tools_definition=[
+SYSTEM_INSTRUCTION="""
+You are Razorpay Agentic Payment Hub, an intelligent shopping and booking assistant.
+
+IMPORTANT RULES:
+
+FOOD:
+- Food recommendations must use AI knowledge only.
+- Never search the movie/product database for food recommendations.
+- Never invent live restaurant availability.
+- Never claim live food prices unless explicitly provided by the user.
+- When the user asks for food recommendations, provide exactly 3 food options.
+- Do not create a checkout merely because food was recommended.
+- Food checkout happens only after the user explicitly asks to order, buy, purchase, get, or deliver food.
+- Food checkout uses the real Razorpay checkout flow.
+
+MOVIES:
+- Movie information must come only from the PVR INOX database.
+- Never invent movie names, prices, showtimes, item IDs, or movie details.
+- When the user selects a movie option, use the exact database item ID.
+- Movie checkout must use the exact PVR INOX database item.
+- Preserve the database movie image_url when displaying movie results.
+- Movie booking uses the real Razorpay checkout flow.
+
+GENERAL:
+- Never invent database item IDs.
+- Never create a movie checkout without a valid database item.
+- Never create a food checkout unless the user explicitly orders food.
+- Keep responses concise and useful.
+"""
+
+TOOL_DEFINITIONS=[
     {
         "type":"function",
         "function":{
-            "name":"get_food_recommendations",
-            "description":"Give food recommendations for discovery only. Never create payment or checkout.",
+            "name":"search_movie_database",
+            "description":"Search movies available in the PVR INOX database. Use only for movie or cinema requests.",
             "parameters":{
                 "type":"object",
                 "properties":{
-                    "query":{"type":"string"},
-                    "location":{"type":"string"},
-                    "cuisine":{"type":"string"},
-                    "budget":{"type":"string"}
-                },
-                "required":["query"]
-            }
-        }
-    },
-    {
-        "type":"function",
-        "function":{
-            "name":"search_merchant_products",
-            "description":"Search the database only for movies, cinema, movie tickets, showtimes and PVR INOX entertainment products.",
-            "parameters":{
-                "type":"object",
-                "properties":{
-                    "query":{"type":"string"},
-                    "location":{"type":"string"},
-                    "merchant":{"type":"string"}
-                },
-                "required":["query"]
-            }
-        }
-    },
-    {
-        "type":"function",
-        "function":{
-            "name":"create_razorpay_checkout",
-            "description":"Create Razorpay checkout for a real movie database item returned by search_merchant_products.",
-            "parameters":{
-                "type":"object",
-                "properties":{
-                    "item_ids":{
-                        "type":"array",
-                        "items":{"type":"integer"}
+                    "query":{
+                        "type":"string",
+                        "description":"Movie search query"
                     },
-                    "merchant":{"type":"string"}
+                    "location":{
+                        "type":"string",
+                        "description":"Optional location"
+                    }
                 },
-                "required":["item_ids"]
+                "required":["query"]
             }
         }
     },
     {
         "type":"function",
         "function":{
-            "name":"create_food_razorpay_checkout",
-            "description":"Create Razorpay checkout for a food order. Do not search the database. Use only when the user explicitly wants to order, buy or get food, not when asking for suggestions.",
+            "name":"create_movie_checkout",
+            "description":"Create a real Razorpay checkout for an exact PVR INOX database movie item.",
             "parameters":{
                 "type":"object",
                 "properties":{
-                    "food_name":{"type":"string"},
-                    "amount":{"type":"number"},
-                    "location":{"type":"string"}
+                    "item_id":{
+                        "type":"integer",
+                        "description":"Exact movie database item ID"
+                    }
+                },
+                "required":["item_id"]
+            }
+        }
+    },
+    {
+        "type":"function",
+        "function":{
+            "name":"create_food_checkout",
+            "description":"Create a real Razorpay checkout for explicitly ordered food.",
+            "parameters":{
+                "type":"object",
+                "properties":{
+                    "food_name":{
+                        "type":"string",
+                        "description":"Food the user explicitly wants to order"
+                    },
+                    "location":{
+                        "type":"string",
+                        "description":"Optional delivery location"
+                    }
                 },
                 "required":["food_name"]
             }
@@ -103,218 +116,314 @@ tools_definition=[
     {
         "type":"function",
         "function":{
-            "name":"verify_and_fulfill_payment",
+            "name":"verify_payment",
             "description":"Verify a completed Razorpay payment.",
             "parameters":{
                 "type":"object",
                 "properties":{
-                    "payment_id":{"type":"string"},
-                    "order_id":{"type":"string"}
+                    "razorpay_order_id":{
+                        "type":"string"
+                    },
+                    "razorpay_payment_id":{
+                        "type":"string"
+                    },
+                    "razorpay_signature":{
+                        "type":"string"
+                    }
                 },
-                "required":["payment_id","order_id"]
+                "required":[
+                    "razorpay_order_id",
+                    "razorpay_payment_id",
+                    "razorpay_signature"
+                ]
             }
         }
     }
 ]
 
-def get_food_recommendations(query,location=None,cuisine=None,budget=None):
-    q=query.lower()
-    if "biryani" in q:
-        recommendations=[
-            {"name":"Ambur Biryani","description":"Aromatic biryani known for its flavorful rice and tender meat.","price":299},
-            {"name":"Dindigul Biryani","description":"A peppery South Indian style biryani with distinctive short-grain rice.","price":329},
-            {"name":"Thalappakatti Biryani","description":"A popular Tamil Nadu style biryani with rich spices and seeraga samba rice.","price":349}
-        ]
-    elif "pizza" in q:
-        recommendations=[
-            {"name":"Margherita Pizza","description":"Classic pizza with tomato, mozzarella and herbs.","price":249},
-            {"name":"Farmhouse Pizza","description":"Vegetable-loaded pizza with a rich cheesy topping.","price":329},
-            {"name":"Chicken Tikka Pizza","description":"Cheesy pizza topped with flavorful chicken tikka.","price":399}
-        ]
-    elif "burger" in q:
-        recommendations=[
-            {"name":"Classic Chicken Burger","description":"Crispy chicken with fresh vegetables and sauce.","price":199},
-            {"name":"Veg Cheese Burger","description":"Vegetable patty with melted cheese and sauces.","price":179},
-            {"name":"Spicy Chicken Burger","description":"Spicy chicken patty with a bold sauce.","price":229}
-        ]
-    else:
-        recommendations=[
-            {"name":query.title(),"description":"A recommended food option based on your request.","price":299},
-            {"name":f"{query.title()} Special","description":"A popular variation worth trying.","price":329},
-            {"name":f"{query.title()} Premium","description":"A richer option for a more indulgent meal.","price":349}
-        ]
-    return {
-        "type":"food_recommendations",
-        "query":query,
-        "location":location,
-        "cuisine":cuisine,
-        "budget":budget,
-        "recommendations":recommendations
-    }
-
-tools_map={
-    "get_food_recommendations":get_food_recommendations,
-    "search_merchant_products":search_merchant_products,
-    "create_razorpay_checkout":create_razorpay_checkout,
-    "create_food_razorpay_checkout":tools.create_food_razorpay_checkout,
-    "verify_and_fulfill_payment":verify_and_fulfill_payment
-}
-
-def save_food_options(result):
-    recommendations=[]
-    if isinstance(result,dict):
-        recommendations=result.get("recommendations",[])
-    if not isinstance(recommendations,list):
-        return
-    options=[]
-    for index,item in enumerate(recommendations,1):
-        if isinstance(item,dict):
-            name=item.get("name")
-            if not name:
-                continue
-            options.append({
-                "number":index,
-                "name":name,
-                "price":item.get("price"),
-                "description":item.get("description",""),
-                "merchant":"Food",
-                "type":"food"
-            })
-        elif isinstance(item,str):
-            options.append({
-                "number":index,
-                "name":item,
-                "price":None,
-                "description":"",
-                "merchant":"Food",
-                "type":"food"
-            })
-    conversation_state["pending_options"]=options
-    conversation_state["active_merchant"]="Food"
-    conversation_state["active_type"]="food"
-
-def save_movie_options(result):
-    options=[]
-    products=[]
-    if isinstance(result,dict):
-        products=result.get("products",result.get("items",[]))
-    if not isinstance(products,list):
-        return
-    for index,product in enumerate(products,1):
-        if not isinstance(product,dict):
-            continue
-        item_id=product.get("id")
-        if item_id is None:
-            continue
-        try:
-            item_id=int(item_id)
-        except:
-            continue
-        options.append({
-            "number":index,
-            "item_id":item_id,
-            "id":item_id,
-            "name":product.get("name",product.get("title","Movie Ticket")),
-            "price":product.get("price"),
-            "merchant":"PVR INOX",
-            "type":"movie"
-        })
-    conversation_state["pending_options"]=options
-    conversation_state["active_merchant"]="PVR INOX"
-    conversation_state["active_type"]="movie"
-
-async def handle_number_selection(user_input):
-    if not user_input.isdigit():
+def get_response_message(response):
+    try:
+        if not response or not getattr(response,"choices",None):
+            return None
+        return response.choices[0].message
+    except Exception:
         return None
-    if not conversation_state["pending_options"]:
-        return None
-    number=int(user_input)
-    if number<1 or number>len(conversation_state["pending_options"]):
-        return {
-            "message":"Please select one of the displayed options.",
-            "type":"error"
-        }
-    selected_option=conversation_state["pending_options"][number-1]
-    conversation_state["selected_item"]=selected_option
+
+def reset_state():
     conversation_state["pending_options"]=[]
-    if selected_option["type"]=="movie":
-        result=await create_razorpay_checkout(
-            item_ids=[selected_option["item_id"]],
-            merchant="PVR INOX"
-        )
-        return {
-            "message":result,
-            "type":"checkout",
-            "action_data":result,
-            "selected_item":selected_option
-        }
-    if selected_option["type"]=="food":
+    conversation_state["selected_item"]=None
+    conversation_state["active_type"]=None
+    conversation_state["active_merchant"]=None
+
+def save_movie_options(products):
+    options=[]
+
+    for item in products or []:
         try:
-            amount=selected_option.get("price")
-            if amount:
-                result=await asyncio.to_thread(
-                    tools.create_food_razorpay_checkout,
-                    food_name=selected_option["name"],
-                    amount=float(amount)
-                )
-            else:
-                result=await asyncio.to_thread(
-                    tools.create_food_razorpay_checkout,
-                    food_name=selected_option["name"]
-                )
-            return {
-                "message":result,
-                "type":"checkout",
-                "action_data":result,
-                "selected_item":selected_option
-            }
-        except Exception as e:
-            print("Food selection checkout error:",repr(e))
-            return {
-                "message":"Unable to create Razorpay checkout.",
-                "type":"error"
-            }
+            item_id=int(item.get("id"))
+        except Exception:
+            continue
+
+        options.append({
+            "number":len(options)+1,
+            "item_id":item_id,
+            "name":item.get("name") or item.get("title") or "Movie",
+            "price":item.get("price"),
+            "merchant":"PVR INOX",
+            "type":"movie",
+            "image_url":item.get("image_url") or item.get("image"),
+            "showtime":item.get("showtime"),
+            "location":item.get("location")
+        })
+
+    conversation_state["pending_options"]=options
+    conversation_state["active_type"]="movie"
+    conversation_state["active_merchant"]="PVR INOX"
+
+def save_food_options(text):
+    options=[]
+
+    if not text:
+        conversation_state["pending_options"]=[]
+        conversation_state["active_type"]="food"
+        conversation_state["active_merchant"]="Food"
+        return
+
+    for line in text.splitlines():
+        clean=re.sub(r"[*_`#]","",line).strip()
+
+        match=re.match(r"^\s*(\d+)[.)]\s*(.+)$",clean)
+
+        if not match:
+            continue
+
+        number=int(match.group(1))
+        name=match.group(2).strip()
+
+        name=re.split(r"\s+[—–-]\s+",name,1)[0].strip()
+
+        name=re.sub(r"\s+$","",name)
+
+        if not name:
+            continue
+
+        options.append({
+            "number":number,
+            "name":name,
+            "merchant":"Food",
+            "type":"food"
+        })
+
+    options=sorted(options,key=lambda x:x["number"])
+
+    unique_options=[]
+    seen_names=set()
+
+    for option in options:
+        name=option["name"].strip().lower()
+
+        if name in seen_names:
+            continue
+
+        seen_names.add(name)
+        unique_options.append(option)
+
+    unique_options=unique_options[:3]
+
+    for index,option in enumerate(unique_options,1):
+        option["number"]=index
+
+    conversation_state["pending_options"]=unique_options
+    conversation_state["active_type"]="food"
+    conversation_state["active_merchant"]="Food"
+
+    print("Saved food options:",conversation_state["pending_options"])
+
+def recover_food_options_from_history(chat_history):
+    if not chat_history:
+        return False
+
+    for msg in reversed(chat_history):
+        if not isinstance(msg,dict):
+            continue
+
+        role=msg.get("role")
+        content=msg.get("content","")
+
+        if role not in {"assistant","model"}:
+            continue
+
+        if not isinstance(content,str) or not content.strip():
+            continue
+
+        clean_content=re.sub(r"[*_`#]","",content)
+
+        has_one=re.search(r"(?m)^\s*1[.)]\s+",clean_content)
+        has_two=re.search(r"(?m)^\s*2[.)]\s+",clean_content)
+        has_three=re.search(r"(?m)^\s*3[.)]\s+",clean_content)
+
+        if has_one and has_two and has_three:
+            save_food_options(content)
+
+            if len(conversation_state.get("pending_options",[]))>=3:
+                print("Recovered food options from chat history.")
+                return True
+
+    return False
+
+def format_movie_options():
+    options=conversation_state["pending_options"]
+
+    if not options:
+        return "I couldn't find any movies available at PVR INOX."
+
+    lines=["🎬 Movies available at PVR INOX:"]
+
+    for option in options:
+        name=option.get("name","Movie")
+        price=option.get("price")
+        showtime=option.get("showtime")
+
+        details=[]
+
+        if price is not None:
+            details.append(f"₹{price}")
+
+        if showtime:
+            details.append(str(showtime))
+
+        suffix=f" — {' • '.join(details)}" if details else ""
+
+        lines.append(f"{option['number']}. {name}{suffix}")
+
+    lines.append("")
+    lines.append("Reply with the option number to book.")
+
+    return "\n".join(lines)
+
+def format_food_options():
+    options=conversation_state["pending_options"]
+
+    if not options:
+        return "Sorry, I couldn't generate food suggestions right now."
+
+    lines=["🍽️ Here are 3 food options:"]
+
+    for option in options:
+        lines.append(f"{option['number']}. {option['name']}")
+
+    lines.append("")
+    lines.append("Reply with the option number if you want to order.")
+
+    return "\n".join(lines)
+
+def extract_selection_number(text):
+    if not text:
+        return None
+
+    value=text.strip().lower()
+
+    patterns=[
+        r"^\s*(\d+)\s*$",
+        r"^\s*option\s*(\d+)\s*$",
+        r"^\s*option\s*#?\s*(\d+)\s*$",
+        r"^\s*(?:checkout|buy|order|purchase)\s+(?:product|option|item)?\s*#?\s*(\d+)\s*$",
+        r"^\s*(?:checkout|buy|order|purchase)\s*#?\s*(\d+)\s*$"
+    ]
+
+    for pattern in patterns:
+        match=re.match(pattern,value)
+
+        if match:
+            return int(match.group(1))
+
     return None
 
-def get_response_message(response):
-    if response is None:
+def extract_location(text):
+    if not text:
         return None
-    if not getattr(response,"choices",None):
-        return None
-    return response.choices[0].message
 
-async def run_agent(user_prompt,chat_history=None):
-    if chat_history is None:
-        chat_history=[]
-    user_input=user_prompt.strip()
-    selection_result=await handle_number_selection(user_input)
-    if selection_result is not None:
-        return selection_result
+    match=re.search(
+        r"\b(?:in|at|near)\s+(.+)$",
+        text,
+        re.IGNORECASE
+    )
 
-    lower_input=user_input.lower()
+    if match:
+        location=match.group(1).strip()
 
-    recommendation_words=[
-        "suggest",
-        "recommend",
-        "recommendation",
-        "recommendations",
-        "best",
-        "options",
-        "what should i eat",
-        "what can i eat",
-        "which should i eat"
+        location=re.sub(
+            r"\b(?:please|pls|please suggest|suggest|recommend)\b",
+            "",
+            location,
+            flags=re.IGNORECASE
+        ).strip()
+
+        return location or None
+
+    return None
+
+def extract_food_name(text):
+    if not text:
+        return ""
+
+    value=text.strip()
+
+    value=re.sub(
+        r"^\s*(?:please\s+)?(?:order|buy|purchase|get|send|deliver)\s+",
+        "",
+        value,
+        flags=re.IGNORECASE
+    )
+
+    value=re.sub(
+        r"^\s*(?:me|some|a|an)\s+",
+        "",
+        value,
+        flags=re.IGNORECASE
+    )
+
+    location_match=re.search(
+        r"\s+(?:in|at|near)\s+.+$",
+        value,
+        re.IGNORECASE
+    )
+
+    if location_match:
+        value=value[:location_match.start()].strip()
+
+    return value.strip()
+
+def is_movie_request(text):
+    if not text:
+        return False
+
+    value=text.lower()
+
+    keywords=[
+        "movie",
+        "movies",
+        "film",
+        "films",
+        "cinema",
+        "cinemas",
+        "ticket",
+        "tickets",
+        "showtime",
+        "showtimes",
+        "pvr",
+        "inox"
     ]
 
-    order_words=[
-        "order",
-        "buy",
-        "purchase",
-        "get me",
-        "send me",
-        "deliver me"
-    ]
+    return any(keyword in value for keyword in keywords)
 
-    food_keywords=[
+def is_food_request(text):
+    if not text:
+        return False
+
+    value=text.lower()
+
+    keywords=[
         "biryani",
         "pizza",
         "burger",
@@ -329,230 +438,123 @@ async def run_agent(user_prompt,chat_history=None):
         "pasta",
         "sandwich",
         "meal",
-        "food"
+        "food",
+        "restaurant",
+        "eat"
     ]
 
-    movie_keywords=[
-        "movie",
-        "film",
-        "cinema",
-        "ticket",
-        "showtime",
-        "pvr",
-        "inox",
-        "watch"
+    return any(keyword in value for keyword in keywords)
+
+def is_food_order(text):
+    if not text:
+        return False
+
+    value=text.lower()
+
+    keywords=[
+        "order",
+        "buy",
+        "purchase",
+        "deliver",
+        "delivery",
+        "send me",
+        "get me"
     ]
 
-    is_movie=any(keyword in lower_input for keyword in movie_keywords)
-    is_food=any(keyword in lower_input for keyword in food_keywords)
-    is_recommendation=any(keyword in lower_input for keyword in recommendation_words)
-    is_food_order=any(keyword in lower_input for keyword in order_words)
+    return any(keyword in value for keyword in keywords)
 
-    if is_food and not is_movie and is_recommendation:
-        conversation_state["pending_options"]=[]
-        conversation_state["selected_item"]=None
-        conversation_state["active_merchant"]="Food"
-        conversation_state["active_type"]="food"
+def is_food_suggestion(text):
+    if not text:
+        return False
 
-        messages=[
-            {
-                "role":"system",
-                "content":SYSTEM_INSTRUCTION
-            }
-        ]
+    value=text.lower()
 
-        for msg in chat_history:
-            if isinstance(msg,dict):
-                role=msg.get("role","user")
-                if role in ["user","assistant","system"]:
-                    messages.append({
-                        "role":role,
-                        "content":msg.get("content","")
-                    })
+    keywords=[
+        "suggest",
+        "suggestion",
+        "recommend",
+        "recommendation",
+        "best",
+        "what should i eat",
+        "what can i eat",
+        "which should i eat",
+        "options"
+    ]
 
-        messages.append({
-            "role":"user",
-            "content":user_prompt
-        })
+    return any(keyword in value for keyword in keywords)
 
+async def run_movie_search(user_input):
+    reset_state()
+
+    query=user_input.strip()
+    location=extract_location(user_input)
+
+    try:
+        products=tools.search_merchant_products(
+            query=query,
+            merchant="PVR INOX",
+            location=location
+        )
+    except TypeError:
         try:
-            response=client.chat.completions(
-                model=MODEL_ID,
-                messages=messages,
-                tools=tools_definition,
-                tool_choice="required",
-                temperature=0.2,
-                max_tokens=2048,
-                reasoning_effort=None
+            products=tools.search_merchant_products(
+                query=query,
+                merchant="PVR INOX"
             )
         except Exception as e:
-            print("Sarvam recommendation error:",repr(e))
+            print("Movie database error:",repr(e))
+
             return {
-                "message":"Sorry, I couldn't connect to the AI service.",
+                "text":"Sorry, I couldn't search PVR INOX right now.",
+                "action_data":None,
                 "type":"error"
             }
-
-        response_message=get_response_message(response)
-
-        if response_message is None:
-            return {
-                "message":"The AI model returned an empty response.",
-                "type":"error"
-            }
-
-        while getattr(response_message,"tool_calls",None):
-            messages.append({
-                "role":"assistant",
-                "content":response_message.content or "",
-                "tool_calls":[
-                    {
-                        "id":tc.id,
-                        "type":tc.type,
-                        "function":{
-                            "name":tc.function.name,
-                            "arguments":tc.function.arguments
-                        }
-                    }
-                    for tc in response_message.tool_calls
-                ]
-            })
-
-            for tool_call in response_message.tool_calls:
-                function_name=tool_call.function.name
-
-                try:
-                    function_args=json.loads(tool_call.function.arguments)
-                except:
-                    function_args={}
-
-                if function_name!="get_food_recommendations":
-                    return {
-                        "message":"I can recommend food without starting a checkout.",
-                        "type":"recommendations"
-                    }
-
-                try:
-                    result=get_food_recommendations(**function_args)
-                except Exception as e:
-                    print("Recommendation tool error:",repr(e))
-                    result={"error":str(e)}
-
-                save_food_options(result)
-
-                messages.append({
-                    "role":"tool",
-                    "tool_call_id":tool_call.id,
-                    "content":json.dumps(result)
-                })
-
-            try:
-                response=client.chat.completions(
-                    model=MODEL_ID,
-                    messages=messages,
-                    tools=tools_definition,
-                    tool_choice="none",
-                    temperature=0.2,
-                    max_tokens=2048,
-                    reasoning_effort=None
-                )
-            except Exception as e:
-                print("Sarvam recommendation follow-up error:",repr(e))
-                return {
-                    "message":"There was a problem processing the recommendation.",
-                    "type":"error"
-                }
-
-            response_message=get_response_message(response)
-
-            if response_message is None:
-                return {
-                    "message":"The AI model returned an empty response.",
-                    "type":"error"
-                }
+    except Exception as e:
+        print("Movie database error:",repr(e))
 
         return {
-            "text":response_message.content or "",
+            "text":"Sorry, I couldn't search PVR INOX right now.",
+            "action_data":None,
+            "type":"error"
+        }
+
+    if not products:
+        return {
+            "text":"I couldn't find that movie in the PVR INOX database.",
             "action_data":None
         }
 
-    if is_food and not is_movie and is_food_order and not is_recommendation:
-        food_name=user_input
+    save_movie_options(products)
 
-        prefixes=[
-            "order me ",
-            "order ",
-            "get me ",
-            "buy me ",
-            "buy ",
-            "send me ",
-            "deliver me ",
-            "i want to order ",
-            "i want "
-        ]
-
-        for prefix in prefixes:
-            if food_name.lower().startswith(prefix):
-                food_name=food_name[len(prefix):].strip()
-                break
-
-        food_name=food_name.strip(" .,!?")
-
-        if not food_name:
-            return {
-                "message":"Please tell me what food you want to order.",
-                "type":"error"
-            }
-
-        amount=None
-        price_match=re.search(
-            r"(?:₹|rs\.?|inr)?\s*(\d+(?:\.\d+)?)",
-            food_name,
-            re.IGNORECASE
-        )
-
-        if price_match:
-            try:
-                amount=float(price_match.group(1))
-                food_name=re.sub(
-                    r"\s*(?:for|at|₹|rs\.?|inr)?\s*\d+(?:\.\d+)?\s*(?:rs\.?|inr)?",
-                    "",
-                    food_name,
-                    flags=re.IGNORECASE
-                ).strip(" .,!?")
-            except:
-                amount=None
-
-        try:
-            if amount is not None:
-                result=await asyncio.to_thread(
-                    tools.create_food_razorpay_checkout,
-                    food_name=food_name,
-                    amount=amount
-                )
-            else:
-                result=await asyncio.to_thread(
-                    tools.create_food_razorpay_checkout,
-                    food_name=food_name
-                )
-        except Exception as e:
-            print("Food Razorpay checkout error:",repr(e))
-            return {
-                "message":"Unable to create Razorpay checkout.",
-                "type":"error"
-            }
-
-        if not result.get("success"):
-            return {
-                "message":result,
-                "type":"error",
-                "action_data":result
-            }
-
-        return {
-            "message":result,
-            "type":"checkout",
-            "action_data":result
+    return {
+        "text":format_movie_options(),
+        "action_data":{
+            "products":products
         }
+    }
+
+async def run_food_ai(user_input,chat_history):
+    location=extract_location(user_input)
+
+    prompt=f"""
+Give exactly 3 useful food recommendations for this request.
+
+User request: {user_input}
+Location: {location or "not specified"}
+
+Rules:
+- Use general AI knowledge only.
+- Do not search any database.
+- Do not claim live availability.
+- Do not claim live restaurant prices.
+- Do not create checkout.
+- Give exactly 3 numbered food options.
+- Keep each option on one line.
+- Use this exact format:
+1. Food name
+2. Food name
+3. Food name
+""".strip()
 
     messages=[
         {
@@ -561,151 +563,525 @@ async def run_agent(user_prompt,chat_history=None):
         }
     ]
 
-    for msg in chat_history:
-        if isinstance(msg,dict):
-            role=msg.get("role","user")
-            if role in ["user","assistant","system"]:
-                messages.append({
-                    "role":role,
-                    "content":msg.get("content","")
-                })
+    for msg in chat_history or []:
+        if not isinstance(msg,dict):
+            continue
+
+        role=msg.get("role")
+        content=msg.get("content","")
+
+        if role in {"user","assistant"} and content:
+            messages.append({
+                "role":role,
+                "content":content
+            })
 
     messages.append({
         "role":"user",
-        "content":user_prompt
+        "content":prompt
     })
 
-    action_data=None
-
     try:
-        response=client.chat.completions(
+        response=await asyncio.to_thread(
+            client.chat.completions,
             model=MODEL_ID,
             messages=messages,
-            tools=tools_definition,
-            tool_choice="auto",
+            reasoning_effort=None,
             temperature=0.2,
-            max_tokens=2048,
-            reasoning_effort=None
+            max_tokens=300
         )
     except Exception as e:
-        print("Sarvam error:",repr(e))
+        print("Food AI error:",repr(e))
+
         return {
-            "message":"Sorry, I couldn't connect to the AI service.",
+            "text":"Sorry, I couldn't generate food suggestions right now.",
+            "action_data":None,
             "type":"error"
         }
 
-    response_message=get_response_message(response)
+    message=get_response_message(response)
 
-    if response_message is None:
+    if message is None:
+        print("Food AI returned no message.")
+        print("Food AI response:",response)
+
         return {
-            "message":"The AI model returned an empty response.",
+            "text":"Sorry, I couldn't generate food suggestions right now.",
+            "action_data":None,
             "type":"error"
         }
 
-    while getattr(response_message,"tool_calls",None):
-        messages.append({
-            "role":"assistant",
-            "content":response_message.content or "",
-            "tool_calls":[
-                {
-                    "id":tc.id,
-                    "type":tc.type,
-                    "function":{
-                        "name":tc.function.name,
-                        "arguments":tc.function.arguments
-                    }
-                }
-                for tc in response_message.tool_calls
-            ]
-        })
+    content=getattr(message,"content",None)
 
-        for tool_call in response_message.tool_calls:
-            function_name=tool_call.function.name
+    if not content:
+        print("Food AI returned empty content.")
+        print("Food AI response:",response)
 
-            try:
-                function_args=json.loads(tool_call.function.arguments)
-            except:
-                function_args={}
+        return {
+            "text":"Sorry, I couldn't generate food suggestions right now.",
+            "action_data":None,
+            "type":"error"
+        }
 
-            function_to_call=tools_map.get(function_name)
+    content=content.strip()
 
-            if function_to_call is None:
-                result={
-                    "error":f"Unknown tool: {function_name}"
-                }
-            else:
-                try:
-                    if asyncio.iscoroutinefunction(function_to_call):
-                        result=await function_to_call(**function_args)
-                    else:
-                        result=await asyncio.to_thread(
-                            function_to_call,
-                            **function_args
-                        )
-                except Exception as e:
-                    print(f"Tool error ({function_name}):",repr(e))
-                    result={
-                        "error":str(e)
-                    }
+    print("Food AI response:",content)
 
-            action_data=result
+    save_food_options(content)
 
-            if function_name=="get_food_recommendations":
-                save_food_options(result)
+    if len(conversation_state["pending_options"])<3:
+        print("Food AI did not return 3 parseable options.")
 
-            if function_name=="search_merchant_products":
-                save_movie_options(result)
-
-            if function_name=="create_razorpay_checkout":
-                return {
-                    "message":result,
-                    "type":"checkout",
-                    "action_data":result
-                }
-
-            if function_name=="create_food_razorpay_checkout":
-                return {
-                    "message":result,
-                    "type":"checkout",
-                    "action_data":result
-                }
-
-            messages.append({
-                "role":"tool",
-                "tool_call_id":tool_call.id,
-                "content":(
-                    json.dumps(result)
-                    if not isinstance(result,str)
-                    else result
-                )
-            })
-
-        try:
-            response=client.chat.completions(
-                model=MODEL_ID,
-                messages=messages,
-                tools=tools_definition,
-                tool_choice="auto",
-                temperature=0.2,
-                max_tokens=2048,
-                reasoning_effort=None
-            )
-        except Exception as e:
-            print("Sarvam follow-up error:",repr(e))
-            return {
-                "message":"There was a problem processing the request.",
-                "type":"error"
-            }
-
-        response_message=get_response_message(response)
-
-        if response_message is None:
-            return {
-                "message":"The AI model returned an empty response.",
-                "type":"error"
-            }
+        return {
+            "text":content,
+            "action_data":None
+        }
 
     return {
-        "text":response_message.content or "",
-        "action_data":action_data
+        "text":format_food_options(),
+        "action_data":None
     }
+
+async def run_food_order(user_input):
+    reset_state()
+
+    food_name=extract_food_name(user_input)
+    location=extract_location(user_input)
+
+    if not food_name:
+        return {
+            "text":"Please tell me what food you would like to order.",
+            "action_data":None
+        }
+
+    print("Direct food order:",food_name)
+    print("Food location:",location)
+
+    try:
+        result=await asyncio.to_thread(
+            tools.create_food_razorpay_checkout,
+            food_name=food_name,
+            location=location
+        )
+    except Exception as e:
+        print("Food checkout error:",repr(e))
+
+        return {
+            "text":"Sorry, I couldn't create the food checkout right now.",
+            "action_data":None,
+            "type":"error"
+        }
+
+    print("Food checkout result:",result)
+
+    if not result:
+        return {
+            "text":"Sorry, I couldn't create the food checkout right now.",
+            "action_data":None,
+            "type":"error"
+        }
+
+    if result.get("success") is False:
+        return {
+            "text":result.get(
+                "message",
+                "Sorry, I couldn't create the food checkout right now."
+            ),
+            "action_data":None,
+            "type":"error"
+        }
+
+    return {
+        "text":f"Opening Razorpay Checkout for {food_name}...",
+        "action_data":{
+            "razorpay_order_id":result.get("razorpay_order_id"),
+            "razorpay_key_id":result.get("razorpay_key_id"),
+            "key_id":result.get("razorpay_key_id"),
+            "amount":result.get("amount_paise"),
+            "amount_paise":result.get("amount_paise"),
+            "currency":result.get("currency","INR"),
+            "merchant":result.get("merchant","Razorpay"),
+            "food_name":result.get("food_name",food_name),
+            "type":"food_checkout"
+        }
+    }
+
+async def handle_number_selection(number):
+    options=conversation_state.get("pending_options",[])
+
+    print("================================")
+    print("SELECTION RECEIVED:",number)
+    print("ACTIVE TYPE:",conversation_state.get("active_type"))
+    print("PENDING OPTIONS:",options)
+    print("================================")
+
+    if not options:
+        return {
+            "text":"Please ask me for food or movie recommendations first.",
+            "action_data":None
+        }
+
+    if number<1 or number>len(options):
+        return {
+            "text":f"Please select an option between 1 and {len(options)}.",
+            "action_data":None
+        }
+
+    selected=options[number-1]
+
+    conversation_state["selected_item"]=selected
+
+    print("SELECTED ITEM:",selected)
+
+    if selected.get("type")=="movie":
+        item_id=selected.get("item_id")
+
+        if not item_id:
+            return {
+                "text":"This movie does not have a valid database item ID.",
+                "action_data":None,
+                "type":"error"
+            }
+
+        try:
+            result=await tools.create_razorpay_checkout(
+                item_ids=[item_id],
+                merchant="PVR INOX"
+            )
+        except Exception as e:
+            print("Movie checkout error:",repr(e))
+
+            return {
+                "text":"Sorry, I couldn't create the movie checkout right now.",
+                "action_data":None,
+                "type":"error"
+            }
+
+        if not result or result.get("status")=="error":
+            return {
+                "text":result.get(
+                    "message",
+                    "Sorry, I couldn't create the movie checkout right now."
+                ) if result else "Sorry, I couldn't create the movie checkout right now.",
+                "action_data":None,
+                "type":"error"
+            }
+
+        return {
+            "text":f"Opening Razorpay Checkout for {selected.get('name','movie')}...",
+            "action_data":result
+        }
+
+    if selected.get("type")=="food":
+        food_name=selected.get("name","").strip()
+
+        if not food_name:
+            return {
+                "text":"I couldn't identify the selected food.",
+                "action_data":None,
+                "type":"error"
+            }
+
+        print("Creating food checkout for:",food_name)
+
+        try:
+            result=await asyncio.to_thread(
+                tools.create_food_razorpay_checkout,
+                food_name=food_name
+            )
+        except Exception as e:
+            print("Food checkout error:",repr(e))
+
+            return {
+                "text":f"Sorry, I couldn't create the food checkout right now: {str(e)}",
+                "action_data":None,
+                "type":"error"
+            }
+
+        print("Food checkout result:",result)
+
+        if not result:
+            return {
+                "text":"Sorry, I couldn't create the food checkout right now.",
+                "action_data":None,
+                "type":"error"
+            }
+
+        if result.get("success") is False:
+            return {
+                "text":result.get(
+                    "message",
+                    "Sorry, I couldn't create the food checkout right now."
+                ),
+                "action_data":None,
+                "type":"error"
+            }
+
+        return {
+            "text":f"Opening Razorpay Checkout for {food_name}...",
+            "action_data":{
+                "razorpay_order_id":result.get("razorpay_order_id"),
+                "razorpay_key_id":result.get("razorpay_key_id"),
+                "key_id":result.get("razorpay_key_id"),
+                "amount":result.get("amount_paise"),
+                "amount_paise":result.get("amount_paise"),
+                "currency":result.get("currency","INR"),
+                "merchant":result.get("merchant","Razorpay"),
+                "food_name":result.get("food_name",food_name),
+                "type":"food_checkout"
+            }
+        }
+
+    return {
+        "text":"I couldn't process that selection.",
+        "action_data":None,
+        "type":"error"
+    }
+
+async def run_generic_ai(user_input,chat_history):
+    messages=[
+        {
+            "role":"system",
+            "content":SYSTEM_INSTRUCTION
+        }
+    ]
+
+    for msg in chat_history or []:
+        if not isinstance(msg,dict):
+            continue
+
+        role=msg.get("role")
+        content=msg.get("content","")
+
+        if role in {"user","assistant"} and content:
+            messages.append({
+                "role":role,
+                "content":content
+            })
+
+    messages.append({
+        "role":"user",
+        "content":user_input
+    })
+
+    try:
+        response=await asyncio.to_thread(
+            client.chat.completions,
+            model=MODEL_ID,
+            messages=messages,
+            tools=TOOL_DEFINITIONS,
+            tool_choice="auto",
+            temperature=0.2,
+            reasoning_effort=None,
+            max_tokens=800
+        )
+    except Exception as e:
+        print("Generic AI error:",repr(e))
+
+        return {
+            "text":"Sorry, I couldn't process your request right now.",
+            "action_data":None,
+            "type":"error"
+        }
+
+    message=get_response_message(response)
+
+    if message is None:
+        print("Generic AI returned no message.")
+        print("Generic AI response:",response)
+
+        return {
+            "text":"Sorry, I couldn't process your request right now.",
+            "action_data":None,
+            "type":"error"
+        }
+
+    tool_calls=getattr(message,"tool_calls",None)
+
+    if tool_calls:
+        for tool_call in tool_calls:
+            try:
+                function_name=tool_call.function.name
+                arguments=json.loads(
+                    tool_call.function.arguments or "{}"
+                )
+            except Exception as e:
+                print("Tool parsing error:",repr(e))
+                continue
+
+            if function_name=="search_movie_database":
+                query=arguments.get("query","")
+                location=arguments.get("location")
+
+                return await run_movie_search(
+                    f"{query} in {location}" if location else query
+                )
+
+            if function_name=="create_movie_checkout":
+                item_id=arguments.get("item_id")
+
+                if not item_id:
+                    continue
+
+                try:
+                    result=await tools.create_razorpay_checkout(
+                        item_ids=[int(item_id)],
+                        merchant="PVR INOX"
+                    )
+                except Exception as e:
+                    print("Movie tool checkout error:",repr(e))
+
+                    return {
+                        "text":"Sorry, I couldn't create the movie checkout.",
+                        "action_data":None,
+                        "type":"error"
+                    }
+
+                return {
+                    "text":"Opening Razorpay Checkout...",
+                    "action_data":result
+                }
+
+            if function_name=="create_food_checkout":
+                food_name=arguments.get("food_name","")
+                location=arguments.get("location")
+
+                if not food_name:
+                    continue
+
+                try:
+                    result=await asyncio.to_thread(
+                        tools.create_food_razorpay_checkout,
+                        food_name=food_name,
+                        location=location
+                    )
+                except Exception as e:
+                    print("Food tool checkout error:",repr(e))
+
+                    return {
+                        "text":"Sorry, I couldn't create the food checkout.",
+                        "action_data":None,
+                        "type":"error"
+                    }
+
+                if not result:
+                    return {
+                        "text":"Sorry, I couldn't create the food checkout.",
+                        "action_data":None,
+                        "type":"error"
+                    }
+
+                if result.get("success") is False:
+                    return {
+                        "text":result.get(
+                            "message",
+                            "Sorry, I couldn't create the food checkout."
+                        ),
+                        "action_data":None,
+                        "type":"error"
+                    }
+
+                return {
+                    "text":f"Opening Razorpay Checkout for {food_name}...",
+                    "action_data":{
+                        "razorpay_order_id":result.get("razorpay_order_id"),
+                        "razorpay_key_id":result.get("razorpay_key_id"),
+                        "key_id":result.get("razorpay_key_id"),
+                        "amount":result.get("amount_paise"),
+                        "amount_paise":result.get("amount_paise"),
+                        "currency":result.get("currency","INR"),
+                        "merchant":result.get("merchant","Razorpay"),
+                        "food_name":result.get("food_name",food_name),
+                        "type":"food_checkout"
+                    }
+                }
+
+    content=getattr(message,"content",None)
+
+    if not content:
+        print("Generic AI returned empty content.")
+        print("Generic AI response:",response)
+
+        return {
+            "text":"Sorry, I couldn't generate a response right now.",
+            "action_data":None,
+            "type":"error"
+        }
+
+    return {
+        "text":content,
+        "action_data":None
+    }
+
+async def run_agent(user_input,chat_history=None):
+    if chat_history is None:
+        chat_history=[]
+
+    user_input=(user_input or "").strip()
+
+    if not user_input:
+        return {
+            "text":"How can I help you today?",
+            "action_data":None
+        }
+
+    selection_number=extract_selection_number(user_input)
+
+    if selection_number is not None:
+        pending_options=conversation_state.get("pending_options",[])
+
+        if not pending_options:
+            recovered=recover_food_options_from_history(chat_history)
+
+            if recovered:
+                pending_options=conversation_state.get("pending_options",[])
+
+        if pending_options:
+            return await handle_number_selection(selection_number)
+
+        return {
+            "text":"Please ask me for food or movie recommendations first.",
+            "action_data":None
+        }
+
+    value=user_input.lower().strip()
+
+    greetings=[
+        "hi",
+        "hello",
+        "hey",
+        "hii",
+        "hiii",
+        "good morning",
+        "good afternoon",
+        "good evening"
+    ]
+
+    if value in greetings:
+        return {
+            "text":"Hello! 👋 I can help you discover movies at PVR INOX or get food recommendations and place real Razorpay orders.",
+            "action_data":None
+        }
+
+    if is_movie_request(user_input):
+        return await run_movie_search(user_input)
+
+    if is_food_request(user_input) and is_food_order(user_input) and not is_food_suggestion(user_input):
+        return await run_food_order(user_input)
+
+    if is_food_request(user_input) and is_food_suggestion(user_input):
+        return await run_food_ai(
+            user_input,
+            chat_history
+        )
+
+    if is_food_request(user_input) and not is_food_order(user_input):
+        return await run_food_ai(
+            user_input,
+            chat_history
+        )
+
+    return await run_generic_ai(
+        user_input,
+        chat_history
+    )
