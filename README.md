@@ -2,9 +2,11 @@
 
 <div align="center">
 
-# ⚡ Razorpay Agentic Payment Hub
+# ⚡ Razorpay Agentic Payment Hub 
 
 ### AI-Powered Conversational Commerce & Payment Orchestration
+
+**Live Link** : https://razorpay-agent-hub.onrender.com/
 
 **An agentic AI assistant that understands user intent, recommends products or experiences,  
 and orchestrates secure Razorpay payments through a bounded, explainable workflow.**
@@ -373,6 +375,23 @@ Ask → AI Understands → AI Acts → Pay
 This creates a faster and more conversational payment experience.
 
 ---
+What issue I faced:
+
+1. Food Ordering – Razorpay Checkout Issue
+
+Issue: After selecting a food recommendation, the backend successfully created the Razorpay order, but the Razorpay Checkout window was not opening consistently.
+
+Fix: Updated the frontend Razorpay integration to properly load and detect the Razorpay Checkout SDK, validate the order ID, key ID, amount, and currency, and trigger Razorpay.open() using the order details returned by the backend. Added fallback handling for cases where automatic checkout opening is blocked.
+
+Result: Food selections now correctly connect to the real Razorpay payment flow instead of using a mock payment.
+
+2. AI Response Duplication
+
+Issue: The AI agent occasionally generated/repeated the same response multiple times for a single user request.
+
+Fix: Improved the agent's conversation/state handling and response processing so that each user message is processed once and the generated response is handled only once by the frontend. Also separated food recommendation, selection, and checkout states to avoid repeated processing.
+
+Result: The agent now provides a cleaner single response per request and maintains the correct conversation flow.
 
 ## 🔮 Future Scope
 
