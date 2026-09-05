@@ -14,7 +14,6 @@ from backend import db, agent, tools
 
 app = FastAPI()
 
-# Enable CORS for local testing
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,11 +31,14 @@ class VerifyPaymentRequest(BaseModel):
     razorpay_payment_id: str
     razorpay_signature: str
 
+class CheckoutRequest(BaseModel):
+    item_id: int
+    merchant: str = "PVR INOX"
+
 @app.on_event("startup")
 async def startup_event():
     db.init_db()
 
-# --- API ENDPOINTS ---
 @app.post("/api/chat")
 async def chat_endpoint(payload: ChatRequest):
     result = await agent.run_agent(payload.message, payload.history)
@@ -51,16 +53,29 @@ async def verify_payment(request: VerifyPaymentRequest):
     )
     return result
 
+@app.post("/api/checkout")
+async def checkout(request: CheckoutRequest):
+    try:
+        result = await tools.create_razorpay_checkout(
+            item_ids=[request.item_id],
+            merchant=request.merchant
+        )
+        return result
+    except Exception as e:
+        print("Checkout error:", repr(e))
+        return {
+            "status": "error",
+            "message": "Unable to create Razorpay checkout."
+        }
+
 @app.get("/api/products")
 async def get_products():
     products = db.search_products_db(query="")
     return products
 
-# --- STATIC & FRONTEND FILE SERVING ---
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "..", "frontend"))
 
-# Mount frontend directory for static assets (style.css, images, etc.)
 app.mount("/frontend", StaticFiles(directory=FRONTEND_DIR), name="frontend")
 
 @app.get("/")
@@ -68,4 +83,8 @@ async def read_index():
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(
+        "backend.main:app",
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 8000))
+    )
